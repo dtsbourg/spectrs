@@ -1,0 +1,4 @@
+[package]
+name = "spectro"
+version = "0.1.0"
+authors = ["dtsbourg <dylan.bourgeois@epfl.ch>"]
