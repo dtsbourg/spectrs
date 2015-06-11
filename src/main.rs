@@ -7,16 +7,16 @@ use std::fs::File;
 use std::io::Write;
 
 fn main() {
-    let img = image::open(Path::new("image.jpeg")).unwrap();
+    let img = image::open(Path::new("image.jpg")).unwrap();
     let (x,y) = img.dimensions();
     let mut intensities : Vec<Vec<f32>> = Vec::with_capacity(y as usize);
 
     for (xp, yp, pixel) in img.pixels() {
         let data = pixel.to_rgb().data;
         let rgb_intensity : u16 = data[0] as u16 + data[1] as u16 + data[2] as u16;
-        let norm_intensity : f32 = rgb_intensity as f32 / 255.0;
+        let norm_intensity : f32 = rgb_intensity as f32 / (3.0 * 255.0);
         if xp == 0 {
-            intensities.push(Vec::new());
+            intensities.push(Vec::with_capacity(x as usize));
         }
         intensities[yp as usize].push(norm_intensity);
     }
@@ -39,10 +39,10 @@ fn main() {
     }
 }
 
-fn column_to_pcm(col_intensities : Vec<f32>, y : usize, sample_rate : u32) -> Vec<f32> {
+fn column_to_pcm(col_intensities : Vec<f32>, x : usize, sample_rate : u32) -> Vec<f32> {
     let pi = std::f32::consts::PI;
     let top_f = sample_rate as f32 / 2.0;
-    let y_slice : f32 = top_f / (y as f32);
+    let x_slice : f32 = top_f / (x as f32);
     let column_width : usize = (sample_rate as f32 / 25.0) as usize;
     let mut buf_out : Vec<f32> = Vec::new();
     let mut sample : f32 = 0.0;
@@ -51,8 +51,8 @@ fn column_to_pcm(col_intensities : Vec<f32>, y : usize, sample_rate : u32) -> Ve
         let alpha : f32 = pi * (i as f32 / column_width as f32);
         let envelope_mult : f32 = alpha.sin();
 
-        for j in 0..y {
-            let f = top_f - (y_slice * j as f32);
+        for j in 0..x {
+            let f = top_f - (x_slice * (j as f32));
             let omega : f32 = 2.0 * pi * f * (i as f32 / sample_rate as f32) * envelope_mult;
             sample += col_intensities[j] * omega.sin();
         }
